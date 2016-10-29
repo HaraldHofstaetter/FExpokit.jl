@@ -4,6 +4,9 @@ all: shared_lib
 FC = gfortran
 FFLAGS = -O3 -fPIC
 
+CC = gcc
+CFLAGS = -O3 -fPIC
+
 
 OBJLIBS =
 #LIBS =  -llapack -lblas
@@ -13,9 +16,12 @@ EXPOKIT   = expokit.o
 
 MATAID    = mataid.o
 
-OBJS      = clock.o $(EXPOKIT) $(MATAID) $(OBJLIBS)
+OBJS      = fortran_stop_handler.o clock.o $(EXPOKIT) $(MATAID) $(OBJLIBS)
 
 .f.o:;  $(FC) $(FFLAGS) -c $<
+
+fortran_stop_handler.o: ../../fortran_stop_handler.c
+	$(CC) $(CFLAGS) -c -o fortran_stop_handler.o ../../fortran_stop_handler.c
 
 
 # Figure out OS and architecture
