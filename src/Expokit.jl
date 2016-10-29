@@ -75,14 +75,11 @@ function expv(t::Real, A::AbstractArray{Float64,2}, v::Vector{Float64};
     _expv(t, _matvec_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace)
 end   
 
-function expv(t::Real, Av::Function, v::Vector{Float64}; 
-              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0)
+function expv(t::Real, Av::Function, v::Vector{Float64}, anorm::Real;
+              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false)
     global _Av_, _n_
     _n_ = length(v)
     _Av_ = Av
-    if anorm<=0.0
-        anorm = norm(A, Inf)
-    end
     _expv(t, _matvec_Av_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace)
 end    
 
@@ -148,7 +145,8 @@ end
 function expv(t::Real, A::Union{AbstractArray{Float64,2},AbstractArray{Complex{Float64},2}}, 
               v::Vector{Complex{Float64}}; 
               tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0)
-    global _A_
+    global _A_, _n_
+    _n_ = length(v)
     _A_ = A
     if anorm<=0.0
         anorm = norm(A, Inf)
@@ -159,22 +157,21 @@ end
 function expv(t::Real, A::AbstractArray{Complex{Float64},2}, 
               v::Vector{Float64}; 
               tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0)
-    global _A_
+    global _A_, _n_
+    _n_ = length(v)
     _A_ = A
     v1 = v+0im #complexify
     if anorm<=0.0
         anorm = norm(A, Inf)
     end
-    _expv(t, _matvec_cmplx_, v1, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace)
+    _expv(t, _matvec_cmplx_, v1, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace)
 end   
 
-function expv(t::Real, Av::Function, v::Vector{Complex{Float64}}; 
-              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0)
-    global _Av_
+function expv(t::Real, Av::Function, v::Vector{Complex{Float64}}, anorm::Real; 
+              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false)
+    global _Av_, _n_
+    _n_ = length(v)
     _Av_ = Av
-    if anorm<=0.0
-        anorm = norm(A, Inf)
-    end
     _expv(t, _matvec_Av_cmplx_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace)
 end   
 
