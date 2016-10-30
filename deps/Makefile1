@@ -16,12 +16,12 @@ EXPOKIT   = expokit.o
 
 MATAID    = mataid.o
 
-OBJS      = fortran_stop_handler.o clock.o $(EXPOKIT) $(MATAID) $(OBJLIBS)
+OBJS      = fortran_stop_wrapper.o clock.o $(EXPOKIT) $(MATAID) $(OBJLIBS)
 
 .f.o:;  $(FC) $(FFLAGS) -c $<
 
-fortran_stop_handler.o: ../../fortran_stop_handler.c
-	$(CC) $(CFLAGS) -c -o fortran_stop_handler.o ../../fortran_stop_handler.c
+fortran_stop_wrapper.o: ../../fortran_stop_wrapper.c
+	$(CC) $(CFLAGS) -c -o fortran_stop_wrapper.o ../../fortran_stop_wrapper.c
 
 
 # Figure out OS and architecture

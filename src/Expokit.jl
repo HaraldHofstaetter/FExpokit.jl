@@ -13,7 +13,7 @@ end
 
 
 function _expv(t::Real, matvec::Function, v::Vector{Float64}, anorm::Real; 
-              tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false)
+              tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false)
     n = length(v)
     w = zeros(Float64, n)
     lwsp =  max(10, n*(m+1)+n+(m+2)^2+4*(m+2)^2+6+1)
@@ -45,6 +45,25 @@ function _expv(t::Real, matvec::Function, v::Vector{Float64}, anorm::Real;
     elseif iflag==2
         error("requested tolerance was too high")
     end
+    if statistics
+        stat = Dict(
+            :nmult => iwsp[1],
+            :nexph => iwsp[2],
+            :nscale => iwsp[3],
+            :nstep => iwsp[4],
+            :nreject => iwsp[5],
+            :ibrkflag => iwsp[6],
+            :mbrkdwn => iwsp[7],
+            :step_min => wsp[1],
+            :step_max => wsp[2],
+            :x_error => wsp[5],
+            :s_error => wsp[6],
+            :zbrkdwn => wsp[7],
+            :hump => wsp[8],
+            :scaled_norm_sol => wsp[10],
+         )
+         return w, stat
+    end
     return w
 end       
 
@@ -65,28 +84,28 @@ function _matvec_Av_(v::Ptr{Float64}, w::Ptr{Float64})
 end   
 
 function expv(t::Real, A::AbstractArray{Float64,2}, v::Vector{Float64}; 
-              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0)
+              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
     global _A_, _n_
     _n_ = length(v)
     _A_ = A
     if anorm<=0.0
         anorm = norm(A, Inf)
     end
-    _expv(t, _matvec_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace)
+    _expv(t, _matvec_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics)
 end   
 
 function expv(t::Real, Av::Function, v::Vector{Float64}, anorm::Real;
-              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false)
+              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false, statistics::Bool=false)
     global _Av_, _n_
     _n_ = length(v)
     _Av_ = Av
-    _expv(t, _matvec_Av_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace)
+    _expv(t, _matvec_Av_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics)
 end    
 
 
 
 function _expv(t::Real, matvec::Function, v::Vector{Complex{Float64}}, anorm::Real; 
-               tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false)
+               tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false)
     n = length(v)
     w = zeros(Complex{Float64}, n)
     lwsp =  max(10, n*(m+1)+n+(m+2)^2+4*(m+2)^2+6+1)
@@ -122,6 +141,25 @@ function _expv(t::Real, matvec::Function, v::Vector{Complex{Float64}}, anorm::Re
     elseif iflag==2
         error("requested tolerance was too high")
     end
+    if statistics
+        stat = Dict(
+            :nmult => iwsp[1],
+            :nexph => iwsp[2],
+            :nscale => iwsp[3],
+            :nstep => iwsp[4],
+            :nreject => iwsp[5],
+            :ibrkflag => iwsp[6],
+            :mbrkdwn => iwsp[7],
+            :step_min => real(wsp[1]),
+            :step_max => real(wsp[2]),
+            :x_error => real(wsp[5]),
+            :s_error => real(wsp[6]),
+            :zbrkdwn => real(wsp[7]),
+            :hump => real(wsp[8]),
+            :scaled_norm_sol => real(wsp[10]),
+         )
+         return w, stat
+    end
     return w
 end              
 
@@ -144,19 +182,19 @@ end
 
 function expv(t::Real, A::Union{AbstractArray{Float64,2},AbstractArray{Complex{Float64},2}}, 
               v::Vector{Complex{Float64}}; 
-              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0)
+              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
     global _A_, _n_
     _n_ = length(v)
     _A_ = A
     if anorm<=0.0
         anorm = norm(A, Inf)
     end
-    _expv(t, _matvec_cmplx_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace)
+    _expv(t, _matvec_cmplx_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics)
 end   
 
 function expv(t::Real, A::AbstractArray{Complex{Float64},2}, 
               v::Vector{Float64}; 
-              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0)
+              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
     global _A_, _n_
     _n_ = length(v)
     _A_ = A
@@ -164,19 +202,19 @@ function expv(t::Real, A::AbstractArray{Complex{Float64},2},
     if anorm<=0.0
         anorm = norm(A, Inf)
     end
-    _expv(t, _matvec_cmplx_, v1, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace)
+    _expv(t, _matvec_cmplx_, v1, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics)
 end   
 
 function expv(t::Real, Av::Function, v::Vector{Complex{Float64}}, anorm::Real; 
-              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false)
+              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, statistics::Bool=false)
     global _Av_, _n_
     _n_ = length(v)
     _Av_ = Av
-    _expv(t, _matvec_Av_cmplx_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace)
+    _expv(t, _matvec_Av_cmplx_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics)
 end   
 
 
-
+#include("acroy.jl")
 
 
 end # module Expokit
