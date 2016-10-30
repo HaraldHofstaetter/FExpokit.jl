@@ -7,21 +7,14 @@ FFLAGS = -O3 -fPIC
 CC = gcc
 CFLAGS = -O3 -fPIC
 
-
-OBJLIBS =
 #LIBS =  -llapack -lblas
 LIBS =  /usr/lib/liblapack.so.3 /usr/lib/libblas.so.3
 
-EXPOKIT   = expokit.o
-
-MATAID    = mataid.o
-
-OBJS      = fortran_stop_wrapper.o clock.o $(EXPOKIT) $(MATAID) $(OBJLIBS)
+#OBJS      = fortran_stop_wrapper.o clock.o expokit.o mataid.o
+OBJS      = fortran_stop_wrapper.o expokit.o 
 
 .f.o:;  $(FC) $(FFLAGS) -c $<
-
-fortran_stop_wrapper.o: ../../fortran_stop_wrapper.c
-	$(CC) $(CFLAGS) -c -o fortran_stop_wrapper.o ../../fortran_stop_wrapper.c
+.c.o:;  $(CC) $(CFLAGS) -c $<
 
 
 # Figure out OS and architecture

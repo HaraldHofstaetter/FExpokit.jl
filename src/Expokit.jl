@@ -12,8 +12,8 @@ function __init__()
 end
 
 
-function _expv(t::Real, matvec::Function, v::Vector{Float64}, anorm::Real; 
-              tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false)
+function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Float64}, anorm::Real; 
+              tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
     w = zeros(Float64, n)
     lwsp =  max(10, n*(m+1)+n+(m+2)^2+4*(m+2)^2+6+1)
@@ -21,19 +21,18 @@ function _expv(t::Real, matvec::Function, v::Vector{Float64}, anorm::Real;
     liwsp = max(7, m+2)
     iwsp = zeros(Int32, liwsp)
     iflag = Int32(0) 
-    matvec_fortran = cfunction(matvec, Void, (Ptr{Float64}, Ptr{Float64}))
     if symmetric
         ccall(Libdl.dlsym(libexpokit, :dsexpv_wrap), Void, 
         (Ptr{Int32},   Ptr{Int32},   Ptr{Float64}, Ptr{Float64},   Ptr{Float64}, Ptr{Float64},
-         Ptr{Float64}, Ptr{Float64}, Ptr{Int32},   Ptr{Int32},     Ptr{Int32},   Ptr{Void},      Ptr{Int32},  Ptr{Int32}), 
+         Ptr{Float64}, Ptr{Float64}, Ptr{Int32},   Ptr{Int32},     Ptr{Int32},   Ptr{Void},    Ptr{Int32},  Ptr{Int32}, Ptr{Void}), 
          &n,           &m,           &t,           v,              w,            &tol, 
-         &anorm,       wsp,          &lwsp,        iwsp,           &liwsp,       matvec_fortran, &trace,      &iflag)
+         &anorm,       wsp,          &lwsp,        iwsp,           &liwsp,       matvec,       &trace,      &iflag,     arg )
     else
         ccall(Libdl.dlsym(libexpokit, :dgexpv_wrap), Void, 
         (Ptr{Int32},   Ptr{Int32},   Ptr{Float64}, Ptr{Float64},   Ptr{Float64}, Ptr{Float64},
-         Ptr{Float64}, Ptr{Float64}, Ptr{Int32},   Ptr{Int32},     Ptr{Int32},   Ptr{Void},      Ptr{Int32},  Ptr{Int32}), 
+         Ptr{Float64}, Ptr{Float64}, Ptr{Int32},   Ptr{Int32},     Ptr{Int32},   Ptr{Void},    Ptr{Int32},  Ptr{Int32}, Ptr{Void}), 
          &n,           &m,           &t,           v,              w,            &tol, 
-         &anorm,       wsp,          &lwsp,        iwsp,           &liwsp,       matvec_fortran, &trace,      &iflag)
+         &anorm,       wsp,          &lwsp,        iwsp,           &liwsp,       matvec,       &trace,      &iflag,     arg )
     end
     if ccall(Libdl.dlsym(libexpokit, :has_stopped), Int32, ()) == 1
         error("expokit fortran library stop")
@@ -67,45 +66,32 @@ function _expv(t::Real, matvec::Function, v::Vector{Float64}, anorm::Real;
     return w
 end       
 
-function _matvec_(v::Ptr{Float64}, w::Ptr{Float64})
-    global _A_, _n_
-    v1 = pointer_to_array(v, _n_)    
-    w1 = pointer_to_array(w, _n_) 
-    w1[:] = _A_*v1
+
+function matvec{T<:AbstractArray{Float64,2}}(v_::Ptr{Float64}, w_::Ptr{Float64}, A_::Ptr{T})
+    A = unsafe_pointer_to_objref(A_)::T
+    n = size(A,2)
+    v = pointer_to_array(v_, n)    
+    w = pointer_to_array(w_, n) 
+    w[:] = A*v
     return nothing
 end   
 
-function _matvec_Av_(v::Ptr{Float64}, w::Ptr{Float64})
-    global _Av_, _n_
-    v1 = pointer_to_array(v, _n_)    
-    w1 = pointer_to_array(w, _n_) 
-    w1[:] = _Av_(v1)
-    return nothing
-end   
 
-function expv(t::Real, A::AbstractArray{Float64,2}, v::Vector{Float64}; 
+function expv{T<:AbstractArray{Float64,2}}(t::Real, A::T, v::Vector{Float64}; 
               tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
-    global _A_, _n_
-    _n_ = length(v)
-    _A_ = A
     if anorm<=0.0
         anorm = norm(A, Inf)
     end
-    _expv(t, _matvec_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics)
+    cmatvec = cfunction(matvec, Void, (Ptr{Float64}, Ptr{Float64}, Ptr{T}))
+    arg=pointer_from_objref(A)
+    _expv(t, cmatvec, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
 end   
 
-function expv(t::Real, Av::Function, v::Vector{Float64}, anorm::Real;
-              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false, statistics::Bool=false)
-    global _Av_, _n_
-    _n_ = length(v)
-    _Av_ = Av
-    _expv(t, _matvec_Av_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics)
-end    
 
 
 
-function _expv(t::Real, matvec::Function, v::Vector{Complex{Float64}}, anorm::Real; 
-               tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false)
+function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::Real; 
+               tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
     w = zeros(Complex{Float64}, n)
     lwsp =  max(10, n*(m+1)+n+(m+2)^2+4*(m+2)^2+6+1)
@@ -113,23 +99,22 @@ function _expv(t::Real, matvec::Function, v::Vector{Complex{Float64}}, anorm::Re
     liwsp = max(7, m+2)
     iwsp = zeros(Int32, liwsp)
     iflag = zero(Int32) 
-    matvec_fortran = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}))
     if hermitian
         ccall(Libdl.dlsym(libexpokit, :zhexpv_wrap), Void, 
         (Ptr{Int32},   Ptr{Int32},            Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Float64},
          Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Int32},   Ptr{Int32},            Ptr{Int32},            Ptr{Void},
-         Ptr{Int32},   Ptr{Int32}), 
+         Ptr{Int32},   Ptr{Int32},            Ptr{Void}), 
          &n,           &m,                    &t,           v,                     w,                     &tol, 
-         &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec_fortran,
-         &trace,       &iflag)
+         &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec,
+         &trace,       &iflag,                arg )
     else
         ccall(Libdl.dlsym(libexpokit, :zgexpv_wrap), Void, 
         (Ptr{Int32},   Ptr{Int32},            Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Float64},
          Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Int32},   Ptr{Int32},            Ptr{Int32},            Ptr{Void},
-         Ptr{Int32},   Ptr{Int32}), 
+         Ptr{Int32},   Ptr{Int32},            Ptr{Void}), 
          &n,           &m,                    &t,           v,                     w,                     &tol, 
-         &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec_fortran,
-         &trace,       &iflag)
+         &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec,
+         &trace,       &iflag,                arg )
     end
     if ccall(Libdl.dlsym(libexpokit, :has_stopped), Int32, ()) == 1
         error("expokit fortran library stop")
@@ -164,54 +149,37 @@ function _expv(t::Real, matvec::Function, v::Vector{Complex{Float64}}, anorm::Re
 end              
 
 
-function _matvec_cmplx_(v::Ptr{Complex{Float64}}, w::Ptr{Complex{Float64}})
-    global _A_, _n_
-    v1 = pointer_to_array(v, _n_)    
-    w1 = pointer_to_array(w, _n_) 
-    w1[:] = _A_*v1
+function matvec{T<:AbstractArray{Complex{Float64},2}}(v_::Ptr{Complex{Float64}}, w_::Ptr{Complex{Float64}}, A_::Ptr{T})
+    A = unsafe_pointer_to_objref(A_)::T
+    n = size(A,2)
+    v = pointer_to_array(v_, n)    
+    w = pointer_to_array(w_, n) 
+    w[:] = A*v
     return nothing
-end    
+end   
 
-function _matvec_Av_cmplx_(v::Ptr{Complex{Float64}}, w::Ptr{Complex{Float64}})
-    global _Av_, _n_
-    v1 = pointer_to_array(v, _n_)    
-    w1 = pointer_to_array(w, _n_) 
-    w1[:] = _Av_(v1)
-    return nothing
-end    
 
-function expv(t::Real, A::Union{AbstractArray{Float64,2},AbstractArray{Complex{Float64},2}}, 
-              v::Vector{Complex{Float64}}; 
+function expv{T<:AbstractArray{Complex{Float64},2}}(t::Real, A::T, v::Vector{Complex{Float64}}; 
               tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
-    global _A_, _n_
-    _n_ = length(v)
-    _A_ = A
     if anorm<=0.0
         anorm = norm(A, Inf)
     end
-    _expv(t, _matvec_cmplx_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics)
-end   
+    cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
+    arg=pointer_from_objref(A)
+    _expv(t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+end  
 
-function expv(t::Real, A::AbstractArray{Complex{Float64},2}, 
-              v::Vector{Float64}; 
+function expv{T<:AbstractArray{Complex{Float64},2}}(t::Real, A::T, v::Vector{Float64}; 
               tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
-    global _A_, _n_
-    _n_ = length(v)
-    _A_ = A
+    if anorm<=0.0
+        anorm = norm(A, Inf)
+    end
     v1 = v+0im #complexify
-    if anorm<=0.0
-        anorm = norm(A, Inf)
-    end
-    _expv(t, _matvec_cmplx_, v1, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics)
-end   
+    cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
+    arg=pointer_from_objref(A)
+    _expv(t, cmatvec, v1, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+end  
 
-function expv(t::Real, Av::Function, v::Vector{Complex{Float64}}, anorm::Real; 
-              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, statistics::Bool=false)
-    global _Av_, _n_
-    _n_ = length(v)
-    _Av_ = Av
-    _expv(t, _matvec_Av_cmplx_, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics)
-end   
 
 
 #include("acroy.jl")
