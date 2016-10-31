@@ -52,6 +52,27 @@ void zgexpv_(
         double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
         void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg);
 
+void dsphiv_(
+        int *n, int*m, double *t, double *u, double *v, double *w, double *tol,
+        double *anorm, double *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double*, double*), int *itrace, int *iflag, void** arg);
+
+void dgphiv_(
+        int *n, int*m, double *t, double *u, double *v, double *w, double *tol,
+        double *anorm, double *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double*, double*), int *itrace, int *iflag, void** arg);
+
+void zhphiv_(
+        int *n, int*m, double *t, double complex *u, double complex *v, double complex *w, double *tol,
+        double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg);
+
+void zgphiv_(
+        int *n, int*m, double *t, double complex *u, double complex *v, double complex *w, double *tol,
+        double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg);
+
+
 
 void dsexpv_wrap(
         int *n, int*m, double *t, double *v, double *w, double *tol,
@@ -100,5 +121,54 @@ void zgexpv_wrap(
     }
     please_dont_exit = false;
 }
+
+void dsphiv_wrap(
+        int *n, int*m, double *t, double *u, double *v, double *w, double *tol,
+        double *anorm, double *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double*, double*), int *itrace, int *iflag, void** arg)
+{
+    please_dont_exit = true;
+    if (!setjmp(jenv)) {
+         dsphiv_(n, m, t, u, v, w, tol, anorm, wsp, lwsp, iwsp, liwsp, matvec, itrace, iflag, arg);
+    }
+    please_dont_exit = false;
+}
+
+void dgphiv_wrap(
+        int *n, int*m, double *t, double *u, double *v, double *w, double *tol,
+        double *anorm, double *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double*, double*), int *itrace, int *iflag, void** arg)
+{
+    please_dont_exit = true;
+    if (!setjmp(jenv)) {
+         dgphiv_(n, m, t, u, v, w, tol, anorm, wsp, lwsp, iwsp, liwsp, matvec, itrace, iflag, arg);
+    }
+    please_dont_exit = false;
+}
+
+void zhphiv_wrap(
+        int *n, int*m, double *t, double complex *u, double complex *v, double complex *w, double *tol,
+        double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg)
+{
+    please_dont_exit = true;
+    if (!setjmp(jenv)) {
+         zhphiv_(n, m, t, u, v, w, tol, anorm, wsp, lwsp, iwsp, liwsp, matvec, itrace, iflag, arg);
+    }
+    please_dont_exit = false;
+}
+
+void zgphiv_wrap(
+        int *n, int*m, double *t, double complex *u, double complex *v, double complex *w, double *tol,
+        double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg)
+{
+    please_dont_exit = true;
+    if (!setjmp(jenv)) {
+         zgphiv_(n, m, t, u, v, w, tol, anorm, wsp, lwsp, iwsp, liwsp, matvec, itrace, iflag, arg);
+    }
+    please_dont_exit = false;
+}
+
 
 

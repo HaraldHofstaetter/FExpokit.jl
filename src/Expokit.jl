@@ -2,7 +2,7 @@ __precompile__()
 
 module Expokit
 
-export expv
+export expv, phiv
 
 
 function __init__()
@@ -60,14 +60,73 @@ function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Float64}, anorm::Real;
             :step_max => wsp[2],
             :x_error => wsp[5],
             :s_error => wsp[6],
-            :zbrkdwn => wsp[7],
-            :hump => wsp[8],
+            :tbrkdwn => wsp[7],
+            :t_now => wsp[8],
+            :hump => wsp[9],
             :scaled_norm_sol => wsp[10],
          )
          return w, stat
     end
     return w
 end       
+
+
+function _phiv(t::Real, matvec::Ptr{Void}, u::Vector{Float64}, v::Vector{Float64}, anorm::Real; 
+              tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
+    n = length(v)
+    w = zeros(Float64, n)
+    lwsp =  max(10, n*(m+1)+n+(m+3)^2+4*(m+3)^2+6+1)
+    wsp = zeros(Float64, lwsp)
+    liwsp = max(7, m+3)
+    iwsp = zeros(Int32, liwsp)
+    iflag = Int32(0) 
+    if symmetric
+        ccall(Libdl.dlsym(libexpokit, :dsphiv_wrap), Void, 
+        (Ptr{Int32},   Ptr{Int32},   Ptr{Float64}, Ptr{Float}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64},
+         Ptr{Float64}, Ptr{Float64}, Ptr{Int32},   Ptr{Int32}, Ptr{Int32},   Ptr{Void},    Ptr{Int32},  Ptr{Int32}, Ptr{Void}), 
+         &n,           &m,           &t,           u,          v,            w,            &tol, 
+         &anorm,       wsp,          &lwsp,        iwsp,       &liwsp,       matvec,       &trace,      &iflag,     arg )
+    else
+        ccall(Libdl.dlsym(libexpokit, :dgphiv_wrap), Void, 
+        (Ptr{Int32},   Ptr{Int32},   Ptr{Float64}, Ptr{Float64}, Ptr{Float}, Ptr{Float64}, Ptr{Float64},
+         Ptr{Float64}, Ptr{Float64}, Ptr{Int32},   Ptr{Int32},   Ptr{Int32}, Ptr{Void},    Ptr{Int32},  Ptr{Int32}, Ptr{Void}), 
+         &n,           &m,           &t,           u,            v,          w,            &tol, 
+         &anorm,       wsp,          &lwsp,        iwsp,         &liwsp,     matvec,       &trace,      &iflag,     arg )
+    end
+    if trace
+        Libc.flush_cstdio()
+    end    
+    if ccall(Libdl.dlsym(libexpokit, :has_stopped), Int32, ()) == 1
+        error("expokit fortran library stop")
+    end    
+    if iflag<0
+        error("bad input arguments")
+    elseif iflag==1
+        error("maximum number of steps reached without convergence")
+    elseif iflag==2
+        error("requested tolerance was too high")
+    end
+    if statistics
+        stat = Dict(
+            :nmult => iwsp[1],
+            :nexph => iwsp[2],
+            :nscale => iwsp[3],
+            :nstep => iwsp[4],
+            :nreject => iwsp[5],
+            :ibrkflag => iwsp[6],
+            :mbrkdwn => iwsp[7],
+            :step_min => wsp[1],
+            :step_max => wsp[2],
+            :x_error => wsp[5],
+            :s_error => wsp[6],
+            :tbrkdwn => wsp[7],
+            :t_now => wsp[8],
+         )
+         return w, stat
+    end
+    return w
+end       
+
 
 
 function matvec{T<:AbstractArray{Float64,2}}(v_::Ptr{Float64}, w_::Ptr{Float64}, A_::Ptr{T})
@@ -91,6 +150,18 @@ function expv{T<:AbstractArray{Float64,2}}(t::Real, A::T, v::Vector{Float64};
     arg = pointer_from_objref(A)
     _expv(t, cmatvec, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
 end   
+
+
+function phiv{T<:AbstractArray{Float64,2}}(t::Real, A::T, u::Vector{Float64}, v::Vector{Float64}; 
+              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
+    if anorm<=0.0
+        anorm = norm(A, Inf)
+    end
+    cmatvec = cfunction(matvec, Void, (Ptr{Float64}, Ptr{Float64}, Ptr{T}))
+    arg = pointer_from_objref(A)
+    _phiv(t, cmatvec, u, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
+end   
+
 
 
 function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::Real; 
@@ -145,14 +216,77 @@ function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::R
             :step_max => real(wsp[2]),
             :x_error => real(wsp[5]),
             :s_error => real(wsp[6]),
-            :zbrkdwn => real(wsp[7]),
-            :hump => real(wsp[8]),
+            :tbrkdwn => real(wsp[7]),
+            :t_now => real(wsp[8]),
+            :hump => real(wsp[9]),
             :scaled_norm_sol => real(wsp[10]),
          )
          return w, stat
     end
     return w
+end        
+
+
+function _phiv(t::Real, matvec::Ptr{Void}, u::Vector{Complex{Float64}}, v::Vector{Complex{Float64}}, anorm::Real; 
+               tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
+    n = length(v)
+    w = zeros(Complex{Float64}, n)
+    lwsp =  max(10, n*(m+1)+n+(m+3)^2+4*(m+3)^2+6+1)
+    wsp = zeros(Complex{Float64}, lwsp)
+    liwsp = max(7, m+3)
+    iwsp = zeros(Int32, liwsp)
+    iflag = zero(Int32) 
+    if hermitian
+        ccall(Libdl.dlsym(libexpokit, :zhphiv_wrap), Void, 
+        (Ptr{Int32},   Ptr{Int32},            Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Float64},
+         Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Int32},   Ptr{Int32},            Ptr{Int32},            Ptr{Void},
+         Ptr{Int32},   Ptr{Int32},            Ptr{Void}), 
+         &n,           &m,                    &t,           u,                     v,                     w,                     &tol, 
+         &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec,
+         &trace,       &iflag,                arg )
+    else
+        ccall(Libdl.dlsym(libexpokit, :zgphiv_wrap), Void, 
+        (Ptr{Int32},   Ptr{Int32},            Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Float64},
+         Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Int32},   Ptr{Int32},            Ptr{Int32},            Ptr{Void},
+         Ptr{Int32},   Ptr{Int32},            Ptr{Void}), 
+         &n,           &m,                    &t,           u,                     v,                     w,                     &tol, 
+         &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec,
+         &trace,       &iflag,                arg )
+    end
+    if trace
+        Libc.flush_cstdio()
+    end    
+    if ccall(Libdl.dlsym(libexpokit, :has_stopped), Int32, ()) == 1
+        error("expokit fortran library stop")
+    end    
+    if iflag<0
+        error("bad input arguments")
+    elseif iflag==1
+        error("maximum number of steps reached without convergence")
+    elseif iflag==2
+        error("requested tolerance was too high")
+    end
+    if statistics
+        stat = Dict(
+            :nmult => iwsp[1],
+            :nexph => iwsp[2],
+            :nscale => iwsp[3],
+            :nstep => iwsp[4],
+            :nreject => iwsp[5],
+            :ibrkflag => iwsp[6],
+            :mbrkdwn => iwsp[7],
+            :step_min => real(wsp[1]),
+            :step_max => real(wsp[2]),
+            :x_error => real(wsp[5]),
+            :s_error => real(wsp[6]),
+            :tbrkdwn => real(wsp[7]),
+            :t_now => real(wsp[8]),
+         )
+         return w, stat
+    end
+    return w
 end              
+
 
 
 function matvec{T<:AbstractArray{Complex{Float64},2}}(v_::Ptr{Complex{Float64}}, w_::Ptr{Complex{Float64}}, A_::Ptr{T})
