@@ -17,16 +17,17 @@ Then 'Expokit_examples' will be listed in the JuliaBox home screen. The examples
 + [Expokit_examples.ipynb](https://github.com/HaraldHofstaetter/Expokit.jl/blob/master/examples/Expokit_examples.ipynb)
 
 ## Technical informations
-+ This package contains the file [expokit.f](https://github.com/HaraldHofstaetter/Expokit.jl/blob/master/deps/src/expokit.f) 
-  which was (slightly modified) taken from http://www.maths.uq.edu.au/expokit/download.html, see its 
-  [copyright notice](https://github.com/HaraldHofstaetter/Expokit.jl/blob/master/deps/src/copyright). 
-  My only modifications to this file concern the external subroutine `matvec` for matrix-vector multiplication, which now has 
-  a third argument `arg` of type `integer*8`. Correspondingly, the driver routines now also have an additional argument `arg` 
-  of this type. This allows passing closures via pass-through pointers, see  http://julialang.org/blog/2013/05/callback for a     description of this technique.
++ This package contains the file [expokit.f](https://github.com/HaraldHofstaetter/Expokit.jl/blob/master/deps/src/expokit.f)
+  which was (slightly modified) taken from http://www.maths.uq.edu.au/expokit/download.html, see its
+  [copyright notice](https://github.com/HaraldHofstaetter/Expokit.jl/blob/master/deps/src/copyright).
+  My only modifications to this file concern the external subroutine `matvec` for matrix-vector multiplication, which now has
+  a third argument `arg` of type `integer*8`. Correspondingly, the driver routines now also have an additional argument `arg`
+  of this type. This allows passing closures via pass-through pointers, see  http://julialang.org/blog/2013/05/callback for a
+  description of this technique.
 + In the original Expokit Fotran 77 code there are many `stop` statements to terminate
-  the program if an error occurs. This error handling is not advantageous if the code is compiled to a shared library 
+  the program if an error occurs. This error handling is not advantageous if the code is compiled to a shared library
   mentioned to be called from Julia in an interactive session. The unwanted  program terminations after `stop` are
   avoided by "...subverting the exit mechanism using the obscure long jump mechanism...", see
-  http://stackoverflow.com/a/19608029 for this clever idea and 
+  http://stackoverflow.com/a/19608029 for this clever idea and
   [fortran_stop_wrapper.c](https://github.com/HaraldHofstaetter/Expokit.jl/blob/master/deps/src/fortran_stop_wrapper.c)
   for my implementation.
