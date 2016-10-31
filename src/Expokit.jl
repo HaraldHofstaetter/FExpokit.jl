@@ -90,8 +90,6 @@ function expv{T<:AbstractArray{Float64,2}}(t::Real, A::T, v::Vector{Float64};
 end   
 
 
-
-
 function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::Real; 
                tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
@@ -186,7 +184,7 @@ end
 
 #Case real matrix A but complex vector v needs its own treatment (of course, complex computation required):
 
-function matvec_cmplx{T<:AbstractArray{Float64,2}}(v_::Ptr{Complex{Float64}}, w_::Ptr{Complex{Float64}}, A_::Ptr{T})
+function matvec{T<:AbstractArray{Float64,2}}(v_::Ptr{Complex{Float64}}, w_::Ptr{Complex{Float64}}, A_::Ptr{T})
     A = unsafe_pointer_to_objref(A_)::T
     n = size(A,2)
     v = pointer_to_array(v_, n)    
@@ -202,13 +200,39 @@ function expv{T<:AbstractArray{Float64,2}}(t::Real, A::T, v::Vector{Complex{Floa
     if anorm<=0.0
         anorm = norm(A, Inf)
     end
-    cmatvec = cfunction(matvec_cmplx, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
+    cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
     arg = pointer_from_objref(A)
     _expv(t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
 end  
 
 
+# 
 
+function funvec{T<:Union{Float64,Complex{Float64}}}(v_::Ptr{T}, w_::Ptr{T}, nF_::Ptr{Tuple{Int,Function}})
+    nF = unsafe_pointer_to_objref(nF_)::Tuple{Int,Function}
+    n = nF[1]
+    F = nF[2]
+    v = pointer_to_array(v_, n)    
+    w = pointer_to_array(w_, n) 
+    w[:] = F(v)
+    return nothing
+end 
+
+function expv(t::Real, F::Function, v::Vector{Float64}, anorm::Real;
+    tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false)
+    nF = (length(v), F) 
+    cfunvec = cfunction(funvec, Void, (Ptr{Float64}, Ptr{Float64}, Ptr{Tuple{Int,Function}}))
+    arg = pointer_from_objref(nF)
+    _expv(t, cfunvec, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
+end
+
+function expv(t::Real, F::Function, v::Vector{Complex{Float64}}, anorm::Real;
+    tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false)
+    nF = (length(v), F) 
+    cfunvec = cfunction(funvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Tuple{Int,Function}}))
+    arg = pointer_from_objref(nF)
+    _expv(t, cfunvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+end
 
 #include("acroy.jl")
 
