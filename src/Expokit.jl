@@ -162,7 +162,6 @@ function matvec{T<:AbstractArray{Complex{Float64},2}}(v_::Ptr{Complex{Float64}},
     return nothing
 end   
 
-
 function expv{T<:AbstractArray{Complex{Float64},2}}(t::Real, A::T, v::Vector{Complex{Float64}}; 
               tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
     if anorm<=0.0
@@ -183,6 +182,29 @@ function expv{T<:AbstractArray{Complex{Float64},2}}(t::Real, A::T, v::Vector{Flo
     arg = pointer_from_objref(A)
     _expv(t, cmatvec, v1, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
 end  
+
+
+function matvec_cmplx{T<:AbstractArray{Float64,2}}(v_::Ptr{Complex{Float64}}, w_::Ptr{Complex{Float64}}, A_::Ptr{T})
+    A = unsafe_pointer_to_objref(A_)::T
+    n = size(A,2)
+    v = pointer_to_array(v_, n)    
+    w = pointer_to_array(w_, n) 
+    Base.A_mul_B!(w, A, v) 
+    # This *inplace* matrix-vector-multiplication instead of w[:] = A*v
+    # results in a noticeable performance improvement
+    return nothing
+end 
+
+function expv{T<:AbstractArray{Float64,2}}(t::Real, A::T, v::Vector{Complex{Float64}}; 
+              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
+    if anorm<=0.0
+        anorm = norm(A, Inf)
+    end
+    cmatvec = cfunction(matvec_cmplx, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
+    arg = pointer_from_objref(A)
+    _expv(t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+end  
+
 
 
 
