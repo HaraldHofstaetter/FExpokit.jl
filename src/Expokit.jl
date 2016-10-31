@@ -34,6 +34,9 @@ function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Float64}, anorm::Real;
          &n,           &m,           &t,           v,              w,            &tol, 
          &anorm,       wsp,          &lwsp,        iwsp,           &liwsp,       matvec,       &trace,      &iflag,     arg )
     end
+    if trace
+        Libc.flush_cstdio()
+    end    
     if ccall(Libdl.dlsym(libexpokit, :has_stopped), Int32, ()) == 1
         error("expokit fortran library stop")
     end    
@@ -116,6 +119,9 @@ function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::R
          &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec,
          &trace,       &iflag,                arg )
     end
+    if trace
+        Libc.flush_cstdio()
+    end    
     if ccall(Libdl.dlsym(libexpokit, :has_stopped), Int32, ()) == 1
         error("expokit fortran library stop")
     end    
