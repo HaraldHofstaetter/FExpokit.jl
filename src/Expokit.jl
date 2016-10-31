@@ -184,6 +184,8 @@ function expv{T<:AbstractArray{Complex{Float64},2}}(t::Real, A::T, v::Vector{Flo
 end  
 
 
+#Case real matrix A but complex vector v needs its own treatment (of course, complex computation required):
+
 function matvec_cmplx{T<:AbstractArray{Float64,2}}(v_::Ptr{Complex{Float64}}, w_::Ptr{Complex{Float64}}, A_::Ptr{T})
     A = unsafe_pointer_to_objref(A_)::T
     n = size(A,2)
