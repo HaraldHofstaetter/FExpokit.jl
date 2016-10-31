@@ -154,7 +154,9 @@ function matvec{T<:AbstractArray{Complex{Float64},2}}(v_::Ptr{Complex{Float64}},
     n = size(A,2)
     v = pointer_to_array(v_, n)    
     w = pointer_to_array(w_, n) 
-    w[:] = A*v
+    Base.A_mul_B!(w, A, v) 
+    # This *inplace* matrix-vector-multiplication instead of w[:] = A*v
+    # results in a noticeable performance improvement
     return nothing
 end   
 
