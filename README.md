@@ -34,7 +34,7 @@ parameter | description
 -------------------|-------------
  `m`               | maximum size of the Krylov basis (default: `m=30`)
  `tol`             | the requested accuracy tolerance on `w`. If `tol=0` or `tol` is too small (`tol<eps`) the default value   `sqrt(eps)` is used.
- `symmetric=true`  | indicates that `A` can be handled as a symmetric matrix. (For complex hermitian matrices use `hermitian=true`).
+ `symmetric=true`  | indicates that `A` can be treated as a symmetric matrix. (For complex hermitian matrices use `hermitian=true`).
  `trace=true`      | indicates that step-by-step info shall be printed.
  `anorm`           | an approximation of some norm of `A`.
 
