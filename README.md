@@ -43,6 +43,7 @@ parameter | description
 ```julia
 w, stats = expv(t, A, v, statistics=true)
 ``` 
+Here `stats` is a dictionary with the following entries:
 
 mnemonic            |     description
 --------------------|---------------------------------------------------
