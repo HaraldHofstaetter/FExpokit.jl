@@ -12,7 +12,7 @@ function __init__()
 end
 
 
-function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Float64}, anorm::Real; 
+function _expv_real(t::Real, matvec::Ptr{Void}, v::Vector{Float64}, anorm::Real; 
               tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
     w = zeros(Float64, n)
@@ -71,7 +71,7 @@ function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Float64}, anorm::Real;
 end       
 
 
-function _phiv(t::Real, matvec::Ptr{Void}, u::Vector{Float64}, v::Vector{Float64}, anorm::Real; 
+function _phiv_real(t::Real, matvec::Ptr{Void}, u::Vector{Float64}, v::Vector{Float64}, anorm::Real; 
               tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
     w = zeros(Float64, n)
@@ -82,13 +82,13 @@ function _phiv(t::Real, matvec::Ptr{Void}, u::Vector{Float64}, v::Vector{Float64
     iflag = Int32(0) 
     if symmetric
         ccall(Libdl.dlsym(libexpokit, :dsphiv_wrap), Void, 
-        (Ptr{Int32},   Ptr{Int32},   Ptr{Float64}, Ptr{Float}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64},
+        (Ptr{Int32},   Ptr{Int32},   Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64},
          Ptr{Float64}, Ptr{Float64}, Ptr{Int32},   Ptr{Int32}, Ptr{Int32},   Ptr{Void},    Ptr{Int32},  Ptr{Int32}, Ptr{Void}), 
          &n,           &m,           &t,           u,          v,            w,            &tol, 
          &anorm,       wsp,          &lwsp,        iwsp,       &liwsp,       matvec,       &trace,      &iflag,     arg )
     else
         ccall(Libdl.dlsym(libexpokit, :dgphiv_wrap), Void, 
-        (Ptr{Int32},   Ptr{Int32},   Ptr{Float64}, Ptr{Float64}, Ptr{Float}, Ptr{Float64}, Ptr{Float64},
+        (Ptr{Int32},   Ptr{Int32},   Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64},
          Ptr{Float64}, Ptr{Float64}, Ptr{Int32},   Ptr{Int32},   Ptr{Int32}, Ptr{Void},    Ptr{Int32},  Ptr{Int32}, Ptr{Void}), 
          &n,           &m,           &t,           u,            v,          w,            &tol, 
          &anorm,       wsp,          &lwsp,        iwsp,         &liwsp,     matvec,       &trace,      &iflag,     arg )
@@ -128,43 +128,7 @@ function _phiv(t::Real, matvec::Ptr{Void}, u::Vector{Float64}, v::Vector{Float64
 end       
 
 
-
-function matvec{T<:AbstractArray{Float64,2}}(v_::Ptr{Float64}, w_::Ptr{Float64}, A_::Ptr{T})
-    A = unsafe_pointer_to_objref(A_)::T
-    n = size(A,2)
-    v = pointer_to_array(v_, n)    
-    w = pointer_to_array(w_, n) 
-    Base.A_mul_B!(w, A, v) 
-    # This *inplace* matrix-vector-multiplication instead of w[:] = A*v
-    # results in a noticeable performance improvement
-    return nothing
-end   
-
-
-function expv{T<:AbstractArray{Float64,2}}(t::Real, A::T, v::Vector{Float64}; 
-              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
-    if anorm<=0.0
-        anorm = norm(A, Inf)
-    end
-    cmatvec = cfunction(matvec, Void, (Ptr{Float64}, Ptr{Float64}, Ptr{T}))
-    arg = pointer_from_objref(A)
-    _expv(t, cmatvec, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
-end   
-
-
-function phiv{T<:AbstractArray{Float64,2}}(t::Real, A::T, u::Vector{Float64}, v::Vector{Float64}; 
-              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
-    if anorm<=0.0
-        anorm = norm(A, Inf)
-    end
-    cmatvec = cfunction(matvec, Void, (Ptr{Float64}, Ptr{Float64}, Ptr{T}))
-    arg = pointer_from_objref(A)
-    _phiv(t, cmatvec, u, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
-end   
-
-
-
-function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::Real; 
+function _expv_cmplx(t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::Real; 
                tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
     w = zeros(Complex{Float64}, n)
@@ -227,7 +191,7 @@ function _expv(t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::R
 end        
 
 
-function _phiv(t::Real, matvec::Ptr{Void}, u::Vector{Complex{Float64}}, v::Vector{Complex{Float64}}, anorm::Real; 
+function _phiv_cmplx(t::Real, matvec::Ptr{Void}, u::Vector{Complex{Float64}}, v::Vector{Complex{Float64}}, anorm::Real; 
                tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
     w = zeros(Complex{Float64}, n)
@@ -285,68 +249,75 @@ function _phiv(t::Real, matvec::Ptr{Void}, u::Vector{Complex{Float64}}, v::Vecto
          return w, stat
     end
     return w
-end              
+end
 
 
 
-function matvec{T<:AbstractArray{Complex{Float64},2}}(v_::Ptr{Complex{Float64}}, w_::Ptr{Complex{Float64}}, A_::Ptr{T})
+
+
+function matvec{T}(v_::Ptr{Float64}, w_::Ptr{Float64}, A_::Ptr{T})
     A = unsafe_pointer_to_objref(A_)::T
     n = size(A,2)
-    v = pointer_to_array(v_, n)    
-    w = pointer_to_array(w_, n) 
+    v = unsafe_wrap(Array, v_, n)
+    w = unsafe_wrap(Array, w_, n)
     Base.A_mul_B!(w, A, v) 
     # This *inplace* matrix-vector-multiplication instead of w[:] = A*v
     # results in a noticeable performance improvement
+    # and makes it more general
     return nothing
 end   
 
-function expv{T<:AbstractArray{Complex{Float64},2}}(t::Real, A::T, v::Vector{Complex{Float64}}; 
-              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
-    if anorm<=0.0
-        anorm = norm(A, Inf)
-    end
-    cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
-    arg = pointer_from_objref(A)
-    _expv(t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
-end  
-
-function expv{T<:AbstractArray{Complex{Float64},2}}(t::Real, A::T, v::Vector{Float64}; 
-              tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
-    if anorm<=0.0
-        anorm = norm(A, Inf)
-    end
-    v1 = v+0im #complexify
-    cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
-    arg = pointer_from_objref(A)
-    _expv(t, cmatvec, v1, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
-end  
-
-
-#Case real matrix A but complex vector v needs its own treatment (of course, complex computation required):
-
-function matvec{T<:AbstractArray{Float64,2}}(v_::Ptr{Complex{Float64}}, w_::Ptr{Complex{Float64}}, A_::Ptr{T})
+function matvec{T}(v_::Ptr{Complex{Float64}}, w_::Ptr{Complex{Float64}}, A_::Ptr{T})
     A = unsafe_pointer_to_objref(A_)::T
     n = size(A,2)
-    v = pointer_to_array(v_, n)    
-    w = pointer_to_array(w_, n) 
+    v = unsafe_wrap(Array, v_, n)
+    w = unsafe_wrap(Array, w_, n)
     Base.A_mul_B!(w, A, v) 
     # This *inplace* matrix-vector-multiplication instead of w[:] = A*v
     # results in a noticeable performance improvement
+    # and makes it more general
     return nothing
-end 
+end   
 
-function expv{T<:AbstractArray{Float64,2}}(t::Real, A::T, v::Vector{Complex{Float64}}; 
+function expv{T}(t::Real, A::T, v::Vector{Complex{Float64}}; 
               tol::Real=0.0, m::Integer=30, hermitian::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
     if anorm<=0.0
         anorm = norm(A, Inf)
     end
     cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
     arg = pointer_from_objref(A)
-    _expv(t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+    _expv_cmplx(t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
 end  
 
 
-# 
+function expv{T}(t::Real, A::T, v::Vector{Float64}; 
+              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
+    if anorm<=0.0
+        anorm = norm(A, Inf)
+    end
+    if eltype(A)==Complex{Float64}
+        v1 = v+0im #complexify
+        cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
+        arg = pointer_from_objref(A)
+        return _expv_cmplx(t, cmatvec, v1, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+    else
+        cmatvec = cfunction(matvec, Void, (Ptr{Float64}, Ptr{Float64}, Ptr{T}))
+        arg = pointer_from_objref(A)
+        return _expv_real(t, cmatvec, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
+    end
+end   
+
+#TODO: implement all variants of phiv
+#function phiv{T}(t::Real, A::T, u::Vector{Float64}, v::Vector{Float64}; 
+#              tol::Real=0.0, m::Integer=30, symmetric::Bool=isa(A, Hermitian), trace::Bool=false, anorm::Real=-1.0, statistics::Bool=false)
+#    if anorm<=0.0
+#        anorm = norm(A, Inf)
+#    end
+#    cmatvec = cfunction(matvec, Void, (Ptr{Float64}, Ptr{Float64}, Ptr{T}))
+#    arg = pointer_from_objref(A)
+#    _phiv(t, cmatvec, u, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
+#end   
+
 
 function funvec{T<:Union{Float64,Complex{Float64}}}(v_::Ptr{T}, w_::Ptr{T}, nF_::Ptr{Tuple{Int,Function}})
     nF = unsafe_pointer_to_objref(nF_)::Tuple{Int,Function}
@@ -363,7 +334,7 @@ function expv(t::Real, F::Function, v::Vector{Float64}, anorm::Real;
     nF = (length(v), F) 
     cfunvec = cfunction(funvec, Void, (Ptr{Float64}, Ptr{Float64}, Ptr{Tuple{Int,Function}}))
     arg = pointer_from_objref(nF)
-    _expv(t, cfunvec, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
+    _expv_real(t, cfunvec, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
 end
 
 function expv(t::Real, F::Function, v::Vector{Complex{Float64}}, anorm::Real;
@@ -371,10 +342,9 @@ function expv(t::Real, F::Function, v::Vector{Complex{Float64}}, anorm::Real;
     nF = (length(v), F) 
     cfunvec = cfunction(funvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Tuple{Int,Function}}))
     arg = pointer_from_objref(nF)
-    _expv(t, cfunvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+    _expv_cmplx(t, cfunvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
 end
 
-#include("acroy.jl")
 
 
 end # module Expokit

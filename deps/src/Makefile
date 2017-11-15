@@ -8,7 +8,9 @@ CC = gcc
 CFLAGS = -O3 -fPIC
 
 #LIBS =  -llapack -lblas
-LIBS =  /usr/lib/liblapack.so.3 /usr/lib/libblas.so.3
+#LIBS =  /usr/lib/liblapack.so.3 /usr/lib/libblas.so.3
+LIBDIR = /usr/lib/x86_64-linux-gnu/openblas/
+LIBS =  $(LIBDIR)/liblapack.so.3 $(LIBDIR)/libblas.so.3
 
 #OBJS      = fortran_stop_wrapper.o clock.o expokit.o mataid.o
 OBJS      = fortran_stop_wrapper.o expokit.o 
