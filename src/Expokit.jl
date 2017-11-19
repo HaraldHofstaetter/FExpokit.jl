@@ -2,7 +2,7 @@ __precompile__()
 
 module Expokit
 
-export expv, phiv
+export expv, phiv, expv!, phiv!
 
 
 function __init__()
@@ -277,7 +277,7 @@ end
 
 function expv{T}(t::Real, A::T, v::Vector{Complex{Float64}}; 
               tol::Real=0.0, m::Integer=30, hermitian::Bool=ishermitian(A), trace::Bool=false, anorm::Real=norm(A, Inf), statistics::Bool=false)
-    w = zeros(Float64, length(v))
+    w = zeros(Complex{Float64}, length(v))
     cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
     arg = pointer_from_objref(A)
     _expv_cmplx!(w, t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
