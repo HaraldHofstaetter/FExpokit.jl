@@ -13,7 +13,7 @@ LIBDIR = /usr/lib/x86_64-linux-gnu/openblas/
 LIBS =  $(LIBDIR)/liblapack.so.3 $(LIBDIR)/libblas.so.3
 
 #OBJS      = fortran_stop_wrapper.o clock.o expokit.o mataid.o
-OBJS      = fortran_stop_wrapper.o expokit.o 
+OBJS      = fortran_stop_wrapper.o expokit.o extensions.f 
 
 .f.o:;  $(FC) $(FFLAGS) -c $<
 .c.o:;  $(CC) $(CFLAGS) -c $<

@@ -3,6 +3,7 @@ __precompile__()
 module Expokit
 
 export expv, phiv, expv!, phiv!
+export expiv, expiv!
 
 
 function __init__()
@@ -155,6 +156,63 @@ function _expv_cmplx!(w::Vector{Complex{Float64}},t::Real, matvec::Ptr{Void}, v:
         Libc.flush_cstdio()
     end    
     if ccall(Libdl.dlsym(libexpokit, :has_stopped), Int32, ()) == 1
+        error("expokit fortran library stop (iflag=$iflag)")
+    end    
+    if iflag<0
+        error("bad input arguments")
+    elseif iflag==1
+        error("maximum number of steps reached without convergence")
+    elseif iflag==2
+        error("requested tolerance was too high")
+    end
+    if statistics
+        stat = Dict(
+            :nmult => iwsp[1],
+            :nexph => iwsp[2],
+            :nscale => iwsp[3],
+            :nstep => iwsp[4],
+            :nreject => iwsp[5],
+            :ibrkflag => iwsp[6],
+            :mbrkdwn => iwsp[7],
+            :step_min => real(wsp[1]),
+            :step_max => real(wsp[2]),
+            :x_error => real(wsp[5]),
+            :s_error => real(wsp[6]),
+            :tbrkdwn => real(wsp[7]),
+            :t_now => real(wsp[8]),
+            :hump => real(wsp[9]),
+            :scaled_norm_sol => real(wsp[10]),
+         )
+         return w, stat
+    end
+    return w
+end     
+
+
+function _expiv_cmplx!(w::Vector{Complex{Float64}},t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::Real; 
+               tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
+    n = length(v)
+    lwsp =  max(10, n*(m+1)+n+(m+2)^2+4*(m+2)^2+6+1)
+    wsp = zeros(Complex{Float64}, lwsp)
+    liwsp = max(7, m+2)
+    iwsp = zeros(Int32, liwsp)
+    iflag = zero(Int32) 
+    if hermitian
+        
+        ccall(Libdl.dlsym(libexpokit, :zhexpiv_wrap), Void, 
+        (Ptr{Int32},   Ptr{Int32},            Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Float64},
+         Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Int32},   Ptr{Int32},            Ptr{Int32},            Ptr{Void},
+         Ptr{Int32},   Ptr{Int32},            Ptr{Void}), 
+         &n,           &m,                    &t,           v,                     w,                     &tol, 
+         &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec,
+         &trace,       &iflag,                arg )
+    else
+        error("non-hermitian case not yet implemented.")
+    end
+    if trace
+        Libc.flush_cstdio()
+    end    
+    if ccall(Libdl.dlsym(libexpokit, :has_stopped), Int32, ()) == 1
         error("expokit fortran library stop")
     end    
     if iflag<0
@@ -185,7 +243,7 @@ function _expv_cmplx!(w::Vector{Complex{Float64}},t::Real, matvec::Ptr{Void}, v:
          return w, stat
     end
     return w
-end        
+end 
 
 
 function _phiv_cmplx!(w::Vector{Complex{Float64}}, t::Real, matvec::Ptr{Void}, u::Vector{Complex{Float64}}, v::Vector{Complex{Float64}}, anorm::Real; 
@@ -290,7 +348,6 @@ function expv!{T}(w::Vector{Complex{Float64}}, t::Real, A::T, v::Vector{Complex{
     _expv_cmplx!(w, t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
 end  
 
-
 function expv{T}(t::Real, A::T, v::Vector{Float64}; 
               tol::Real=0.0, m::Integer=30, hermitian::Bool=ishermitian(A), trace::Bool=false, anorm::Real=norm(A, Inf), statistics::Bool=false)
     cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
@@ -322,6 +379,47 @@ function expv!{T}(w::Union{Vector{Float64}, Vector{Complex{Float64}}}, t::Real, 
         return _expv_real!(w, t, cmatvec, v, anorm, tol=tol, m=m, symmetric=hermitian, trace=trace, statistics=statistics, arg=arg)
     end
 end   
+
+
+function expiv{T}(t::Real, A::T, v::Vector{Complex{Float64}}; 
+              tol::Real=0.0, m::Integer=30, hermitian::Bool=ishermitian(A), trace::Bool=false, anorm::Real=norm(A, Inf), statistics::Bool=false)
+    w = zeros(Complex{Float64}, length(v))
+    cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
+    arg = pointer_from_objref(A)
+    _expiv_cmplx!(w, t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+end  
+
+function expiv!{T}(w::Vector{Complex{Float64}}, t::Real, A::T, v::Vector{Complex{Float64}}; 
+              tol::Real=0.0, m::Integer=30, hermitian::Bool=ishermitian(A), trace::Bool=false, anorm::Real=norm(A, Inf), statistics::Bool=false)
+    cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
+    arg = pointer_from_objref(A)
+    _expiv_cmplx!(w, t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+end  
+
+function expiv{T}(t::Real, A::T, v::Vector{Float64}; 
+              tol::Real=0.0, m::Integer=30, hermitian::Bool=ishermitian(A), trace::Bool=false, anorm::Real=norm(A, Inf), statistics::Bool=false)
+    cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
+    #Note: no special handling of real matrices
+    w = zeros(Complex{Float64}, length(v))
+    v1 = v+0im #complexify
+    cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
+    arg = pointer_from_objref(A)
+    return _expiv_cmplx!(w, t, cmatvec, v1, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+end   
+
+function expiv!{T}(w::Vector{Complex{Float64}}, t::Real, A::T, v::Vector{Float64}; 
+              tol::Real=0.0, m::Integer=30, hermitian::Bool=ishermitian(A), trace::Bool=false, anorm::Real=norm(A, Inf), statistics::Bool=false)
+    cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
+    #Note: no special handling of real matrices
+    v1 = v+0im #complexify
+    cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
+    arg = pointer_from_objref(A)
+    return _expiv_cmplx!(w, t, cmatvec, v1, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+end   
+
+
+
+
 
 
 #TODO: implement all variants of phiv

@@ -47,6 +47,16 @@ void zhexpv_(
         double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
         void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg);
 
+void zhexpiv_(
+        int *n, int*m, double *t, double complex *v, double complex *w, double *tol,
+        double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg);
+
+void zhexpivtodo_(
+        int *n, int*m, double *t, double complex *v, double complex *w, double *tol,
+        double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg);
+
 void zgexpv_(
         int *n, int*m, double *t, double complex *v, double complex *w, double *tol,
         double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
@@ -109,6 +119,31 @@ void zhexpv_wrap(
     }
     please_dont_exit = false;
 }
+
+void zhexpiv_wrap(
+        int *n, int*m, double *t, double complex *v, double complex *w, double *tol,
+        double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg)
+{
+    please_dont_exit = true;
+    if (!setjmp(jenv)) {
+         zhexpiv_(n, m, t, v, w, tol, anorm, wsp, lwsp, iwsp, liwsp, matvec, itrace, iflag, arg);
+    }
+    please_dont_exit = false;
+}
+
+void zhexpivtodo_wrap(
+        int *n, int*m, double *t, double complex *v, double complex *w, double *tol,
+        double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg)
+{
+    please_dont_exit = true;
+    if (!setjmp(jenv)) {
+         zhexpivtodo_(n, m, t, v, w, tol, anorm, wsp, lwsp, iwsp, liwsp, matvec, itrace, iflag, arg);
+    }
+    please_dont_exit = false;
+}
+
 
 void zgexpv_wrap(
         int *n, int*m, double *t, double complex *v, double complex *w, double *tol,
