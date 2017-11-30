@@ -155,7 +155,7 @@
       if ( lwsp.lt.n*(m+2)+5*(m+2)**2+ideg+1 ) iflag = -1
       if ( liwsp.lt.m+2 ) iflag = -2
       if ( m.ge.n .or. m.le.0 ) iflag = -3
-      if ( iflag.ne.0 ) stop 'bad sizes (in input of DHEXPV)'
+      if ( iflag.ne.0 ) stop 'bad sizes (in input of ZHEXPIV)'
 *
 *---  initialisations ...
 *

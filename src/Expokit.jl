@@ -16,6 +16,7 @@ end
 function _expv_real!(w::Vector{Float64}, t::Real, matvec::Ptr{Void}, v::Vector{Float64}, anorm::Real; 
               tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
+    m = min(m, n-1)
     lwsp =  max(10, n*(m+1)+n+(m+2)^2+4*(m+2)^2+6+1)
     wsp = zeros(Float64, lwsp)
     liwsp = max(7, m+2)
@@ -74,6 +75,7 @@ end
 function _phiv_real!(w::Vector{Float64}, t::Real, matvec::Ptr{Void}, u::Vector{Float64}, v::Vector{Float64}, anorm::Real; 
               tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
+    m = min(m, n-1)
     lwsp =  max(10, n*(m+1)+n+(m+3)^2+4*(m+3)^2+6+1)
     wsp = zeros(Float64, lwsp)
     liwsp = max(7, m+3)
@@ -130,6 +132,7 @@ end
 function _expv_cmplx!(w::Vector{Complex{Float64}},t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::Real; 
                tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
+    m = min(m, n-1)
     lwsp =  max(10, n*(m+1)+n+(m+2)^2+4*(m+2)^2+6+1)
     wsp = zeros(Complex{Float64}, lwsp)
     liwsp = max(7, m+2)
@@ -192,6 +195,7 @@ end
 function _expiv_cmplx!(w::Vector{Complex{Float64}},t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::Real; 
                tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
+    m = min(m, n-1)
     lwsp =  max(10, n*(m+1)+n+(m+2)^2+4*(m+2)^2+6+1)
     wsp = zeros(Complex{Float64}, lwsp)
     liwsp = max(7, m+2)
@@ -249,6 +253,7 @@ end
 function _phiv_cmplx!(w::Vector{Complex{Float64}}, t::Real, matvec::Ptr{Void}, u::Vector{Complex{Float64}}, v::Vector{Complex{Float64}}, anorm::Real; 
                tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
+    m = min(m, n-1)
     lwsp =  max(10, n*(m+1)+n+(m+3)^2+4*(m+3)^2+6+1)
     wsp = zeros(Complex{Float64}, lwsp)
     liwsp = max(7, m+3)
