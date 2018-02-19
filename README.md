@@ -1,6 +1,8 @@
 # FExpokit.jl
 Julia interface to [Expokit](http://www.maths.uq.edu.au/expokit/),
 "...a software package that provides matrix exponential routines for small dense or very large sparse matrices, real or complex."
+The package is called FExpokit.jl  to distinguish it from [Expokit.jl](https://github.com/acroy/Expokit.jl), which is a reimplementation of the Expokit algorithms in Julia;
+the letter F indicates that  "Fortran-Expokit" is called.
 
 ## Installation
 ```julia
@@ -9,16 +11,21 @@ julia> Pkg.build("FExpokit")
 ```
 ## Usage
 
-```
+```julia
 using FExpokit
 ```
 
 ```julia
 w = expv(t, A, v)
 ```
-computes `w = exp(t*A)*v` where `A` is of type `AbstractArray{Float64,2}` or `AbstractArray{Complex128,2}`, `t` is `Real`,
+computes `w = exp(t*A)*v` where `A` is of a type for which  [`Base.LinAlg.A_mul_B!`](https://docs.julialang.org/en/stable/stdlib/linalg/#Base.LinAlg.A_mul_B!) is defined,
+`t` is `Real`,
 and `v` is of type `Vector{Float64}`or `Vector{Complex128}`.
 
+```julia
+w = expv(t, A, v, matrix_times_minus_i=true)
+```
+computes `w = exp(-1im*t*A)*v`. This is convenient for applications in quantum mechanics.
 
 ```julia
 w = expv(t, F, v, anorm)
@@ -35,7 +42,8 @@ parameter | description
  `m`               | maximum size of the Krylov basis (default: `m=30`)
  `tol`             | the requested accuracy tolerance on `w`. If `tol=0` or `tol` is too small (`tol<eps`) the default value   `sqrt(eps)` is used.
  `symmetric=true`  | indicates that `A` can be treated as a symmetric matrix. (For complex hermitian matrices use `hermitian=true`).
- `trace=true`      | indicates that step-by-step info shall be printed.
+`matrix_times_minus_i=true` | indicates that `A` is replaced by `-1im*A`. If combined with `hermitian=true` this means that `A` is hermitian (not `-1im*A`, which is skew-hermitian in this case).
+ `trace=true`      | indicates that step-by-step info shall be printed.
  `anorm`           | an approximation of some norm of `A`.
 
 ### Statistics
@@ -71,13 +79,13 @@ To get easy access to the examples, copy them into the home directory:
 julia> cp(joinpath(homedir(), ".julia/v0.4/Expokit/examples/"), joinpath(homedir(), "Expokit_examples"), remove_destination=true)
 ```
 Then 'Expokit_examples' will be listed in the JuliaBox home screen. The examples contain among others
-+ [Expokit_examples.ipynb](https://github.com/HaraldHofstaetter/Expokit.jl/blob/master/examples/Expokit_examples.ipynb)
++ [Expokit_examples.ipynb](https://github.com/HaraldHofstaetter/FExpokit.jl/blob/master/examples/Expokit_examples.ipynb)
 
 ## Technical informations
-+ This package contains the file [expokit.f](https://github.com/HaraldHofstaetter/Expokit.jl/blob/master/deps/src/expokit.f)
++ This package contains the file [expokit.f](https://github.com/HaraldHofstaetter/FExpokit.jl/blob/master/deps/src/expokit.f)
   which was (slightly modified) taken from http://www.maths.uq.edu.au/expokit/download.html, see its
   [copyright notice](https://github.com/HaraldHofstaetter/Expokit.jl/blob/master/deps/src/copyright).
-  My only modifications to this file concern the external subroutine `matvec` for matrix-vector multiplication, which now has
+  One of my few modifications to this file concerns the external subroutine `matvec` for matrix-vector multiplication, which now has
   a third argument `arg` of type `integer*8`. Correspondingly, the driver routines now also have an additional argument `arg`
   of this type. This allows passing closures via pass-through pointers, see  http://julialang.org/blog/2013/05/callback for a
   description of this technique.
@@ -86,5 +94,5 @@ Then 'Expokit_examples' will be listed in the JuliaBox home screen. The examples
   mentioned to be called from Julia in an interactive session. The unwanted  program terminations after `stop` are
   avoided by "...subverting the exit mechanism using the obscure long jump mechanism...", see
   http://stackoverflow.com/a/19608029 for this clever idea and
-  [fortran_stop_wrapper.c](https://github.com/HaraldHofstaetter/Expokit.jl/blob/master/deps/src/fortran_stop_wrapper.c)
+  [fortran_stop_wrapper.c](https://github.com/HaraldHofstaetter/FExpokit.jl/blob/master/deps/src/fortran_stop_wrapper.c)
   for my implementation.
