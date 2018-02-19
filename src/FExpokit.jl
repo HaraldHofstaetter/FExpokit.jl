@@ -1,6 +1,6 @@
 __precompile__()
 
-module Expokit
+module FExpokit
 
 export expv, phiv, expv!, phiv!
 
@@ -367,4 +367,4 @@ end
 
 
 
-end # module Expokit
+end # module FExpokit
