@@ -1,11 +1,11 @@
-# ExpokitInterface.jl
+# FExpokit.jl
 Julia interface to [Expokit](http://www.maths.uq.edu.au/expokit/),
 "...a software package that provides matrix exponential routines for small dense or very large sparse matrices, real or complex."
 
 ## Installation
 ```julia
-julia> Pkg.clone("https://github.com/HaraldHofstaetter/ExpokitInterface.jl")
-julia> Pkg.build("ExpokitInterface")
+julia> Pkg.clone("https://github.com/HaraldHofstaetter/FExpokit.jl")
+julia> Pkg.build("FExpokit")
 ```
 ## Usage
 
