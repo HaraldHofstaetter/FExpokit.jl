@@ -13,7 +13,6 @@ CFLAGS = -O3 -fPIC
 LIBDIR = /usr/lib
 LIBS =  $(LIBDIR)/liblapack.so.3 $(LIBDIR)/libblas.so.3
 
-#OBJS      = fortran_stop_wrapper.o clock.o expokit.o mataid.o
 OBJS      = fortran_stop_wrapper.o expokit.o 
 
 .f.o:;  $(FC) $(FFLAGS) -c $<

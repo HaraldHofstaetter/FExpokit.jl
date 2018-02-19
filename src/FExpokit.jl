@@ -72,26 +72,26 @@ end
 
 
 function _phiv_real!(w::Vector{Float64}, t::Real, matvec::Ptr{Void}, u::Vector{Float64}, v::Vector{Float64}, anorm::Real; 
-              tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
+                     tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
     n = length(v)
     m = min(m, n-1)
     lwsp =  max(10, n*(m+1)+n+(m+3)^2+4*(m+3)^2+6+1)
     wsp = zeros(Float64, lwsp)
     liwsp = max(7, m+3)
     iwsp = zeros(Int32, liwsp)
-    iflag = Int32(0) 
+    iflag = Int32(0)
     if symmetric
         ccall(Libdl.dlsym(libexpokit, :dsphiv_wrap), Void, 
         (Ptr{Int32},   Ptr{Int32},   Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64},
          Ptr{Float64}, Ptr{Float64}, Ptr{Int32},   Ptr{Int32}, Ptr{Int32},   Ptr{Void},    Ptr{Int32},  Ptr{Int32}, Ptr{Void}), 
          &n,           &m,           &t,           u,          v,            w,            &tol, 
-         &anorm,       wsp,          &lwsp,        iwsp,       &liwsp,       matvec,       &trace,      &iflag,     arg )
+         &anorm,       wsp,          &lwsp,        iwsp,       &liwsp,       matvec,       &trace,      &iflag,     arg)
     else
         ccall(Libdl.dlsym(libexpokit, :dgphiv_wrap), Void, 
         (Ptr{Int32},   Ptr{Int32},   Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64},
          Ptr{Float64}, Ptr{Float64}, Ptr{Int32},   Ptr{Int32},   Ptr{Int32}, Ptr{Void},    Ptr{Int32},  Ptr{Int32}, Ptr{Void}), 
          &n,           &m,           &t,           u,            v,          w,            &tol, 
-         &anorm,       wsp,          &lwsp,        iwsp,         &liwsp,     matvec,       &trace,      &iflag,     arg )
+         &anorm,       wsp,          &lwsp,        iwsp,         &liwsp,     matvec,       &trace,      &iflag,     arg)
     end
     if trace
         Libc.flush_cstdio()
@@ -125,11 +125,12 @@ function _phiv_real!(w::Vector{Float64}, t::Real, matvec::Ptr{Void}, u::Vector{F
          return w, stat
     end
     return w
-end       
+end     
 
 
 function _expv_cmplx!(w::Vector{Complex{Float64}},t::Real, matvec::Ptr{Void}, v::Vector{Complex{Float64}}, anorm::Real; 
-               tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false, arg::Ptr{Void}=convert(Ptr{Void},0))
+               tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false, 
+               arg::Ptr{Void}=convert(Ptr{Void},0), matrix_times_minus_i::Bool=false)
     n = length(v)
     m = min(m, n-1)
     lwsp =  max(10, n*(m+1)+n+(m+2)^2+4*(m+2)^2+6+1)
@@ -137,22 +138,23 @@ function _expv_cmplx!(w::Vector{Complex{Float64}},t::Real, matvec::Ptr{Void}, v:
     liwsp = max(7, m+2)
     iwsp = zeros(Int32, liwsp)
     iflag = zero(Int32) 
+    imiv = matrix_times_minus_i?1:0
     if hermitian
         ccall(Libdl.dlsym(libexpokit, :zhexpv_wrap), Void, 
         (Ptr{Int32},   Ptr{Int32},            Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Float64},
          Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Int32},   Ptr{Int32},            Ptr{Int32},            Ptr{Void},
-         Ptr{Int32},   Ptr{Int32},            Ptr{Void}), 
+         Ptr{Int32},   Ptr{Int32},            Ptr{Void},    Ptr{Int32}), 
          &n,           &m,                    &t,           v,                     w,                     &tol, 
          &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec,
-         &trace,       &iflag,                arg )
+         &trace,       &iflag,                arg,          &imiv)
     else
         ccall(Libdl.dlsym(libexpokit, :zgexpv_wrap), Void, 
         (Ptr{Int32},   Ptr{Int32},            Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Float64},
          Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Int32},   Ptr{Int32},            Ptr{Int32},            Ptr{Void},
-         Ptr{Int32},   Ptr{Int32},            Ptr{Void}), 
+         Ptr{Int32},   Ptr{Int32},            Ptr{Void},    Ptr{Int32}), 
          &n,           &m,                    &t,           v,                     w,                     &tol, 
          &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec,
-         &trace,       &iflag,                arg )
+         &trace,       &iflag,                arg,          &imiv )
     end
     if trace
         Libc.flush_cstdio()
@@ -188,7 +190,7 @@ function _expv_cmplx!(w::Vector{Complex{Float64}},t::Real, matvec::Ptr{Void}, v:
          return w, stat
     end
     return w
-end        
+end     
 
 
 function _phiv_cmplx!(w::Vector{Complex{Float64}}, t::Real, matvec::Ptr{Void}, u::Vector{Complex{Float64}}, v::Vector{Complex{Float64}}, anorm::Real; 
@@ -279,19 +281,26 @@ function matvec{T}(v_::Ptr{Complex{Float64}}, w_::Ptr{Complex{Float64}}, A_::Ptr
     return nothing
 end   
 
+
 function expv{T}(t::Real, A::T, v::Vector{Complex{Float64}}; 
-              tol::Real=0.0, m::Integer=30, hermitian::Bool=ishermitian(A), trace::Bool=false, anorm::Real=norm(A, Inf), statistics::Bool=false)
+              tol::Real=0.0, m::Integer=30, hermitian::Bool=ishermitian(A), 
+              trace::Bool=false, anorm::Real=norm(A, Inf), statistics::Bool=false,
+              matrix_times_minus_i::Bool=false)
     w = zeros(Complex{Float64}, length(v))
     cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
     arg = pointer_from_objref(A)
-    _expv_cmplx!(w, t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+    _expv_cmplx!(w, t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, 
+                 statistics=statistics, arg=arg, matrix_times_minus_i=matrix_times_minus_i)
 end  
 
 function expv!{T}(w::Vector{Complex{Float64}}, t::Real, A::T, v::Vector{Complex{Float64}}; 
-              tol::Real=0.0, m::Integer=30, hermitian::Bool=ishermitian(A), trace::Bool=false, anorm::Real=norm(A, Inf), statistics::Bool=false)
+              tol::Real=0.0, m::Integer=30, hermitian::Bool=ishermitian(A), 
+              trace::Bool=false, anorm::Real=norm(A, Inf), statistics::Bool=false,
+              matrix_times_minus_i::Bool=false)
     cmatvec = cfunction(matvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{T}))
     arg = pointer_from_objref(A)
-    _expv_cmplx!(w, t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+    _expv_cmplx!(w, t, cmatvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, 
+                 statistics=statistics, arg=arg, matrix_times_minus_i=matrix_times_minus_i)
 end  
 
 

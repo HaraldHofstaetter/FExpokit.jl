@@ -45,12 +45,12 @@ void dgexpv_(
 void zhexpv_(
         int *n, int*m, double *t, double complex *v, double complex *w, double *tol,
         double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
-        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg);
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg, int *imiv);
 
 void zgexpv_(
         int *n, int*m, double *t, double complex *v, double complex *w, double *tol,
         double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
-        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg);
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg, int *imiv);
 
 void dsphiv_(
         int *n, int*m, double *t, double *u, double *v, double *w, double *tol,
@@ -101,11 +101,11 @@ void dgexpv_wrap(
 void zhexpv_wrap(
         int *n, int*m, double *t, double complex *v, double complex *w, double *tol,
         double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
-        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg)
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg, int* imiv)
 {
     please_dont_exit = true;
     if (!setjmp(jenv)) {
-         zhexpv_(n, m, t, v, w, tol, anorm, wsp, lwsp, iwsp, liwsp, matvec, itrace, iflag, arg);
+         zhexpv_(n, m, t, v, w, tol, anorm, wsp, lwsp, iwsp, liwsp, matvec, itrace, iflag, arg, imiv);
     }
     please_dont_exit = false;
 }
@@ -113,11 +113,11 @@ void zhexpv_wrap(
 void zgexpv_wrap(
         int *n, int*m, double *t, double complex *v, double complex *w, double *tol,
         double *anorm, double complex *wsp, int *lwsp, int *iwsp, int *liwsp, 
-        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg)
+        void (*matvec)(double complex*, double complex*), int *itrace, int *iflag, void** arg, int* imiv)
 {
     please_dont_exit = true;
     if (!setjmp(jenv)) {
-         zgexpv_(n, m, t, v, w, tol, anorm, wsp, lwsp, iwsp, liwsp, matvec, itrace, iflag, arg);
+         zgexpv_(n, m, t, v, w, tol, anorm, wsp, lwsp, iwsp, liwsp, matvec, itrace, iflag, arg, imiv);
     }
     please_dont_exit = false;
 }
