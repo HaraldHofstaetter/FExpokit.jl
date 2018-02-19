@@ -10,7 +10,7 @@ julia> Pkg.build("FExpokit")
 ## Usage
 
 ```
-using ExpokitInterface
+using FExpokit
 ```
 
 ```julia
