@@ -68,8 +68,8 @@ mnemonic            |     description
  `:s_error`         | global sum of local truncation errors             
  `:tbrkdwn`         | if "happy breakdown", time when it occured        
  `:t_now`           | integration domain successfully covered           
- `:hump`            | `max||exp(sA)||`, `s in [0,t]` (or `[t,0]` if `t<0`)      
- `:scaled_norm_sol` | `||w||/||v||`, scaled norm of the solution w.      
+ `:hump`            | `max\|\|exp(sA)\|\|`, `s in [0,t]` (or `[t,0]` if `t<0`)      
+ `:scaled_norm_sol` | `\|\|w\|\|/\|\|v\|\|`, scaled norm of the solution w.      
 
 
 
