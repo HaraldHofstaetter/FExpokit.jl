@@ -251,7 +251,8 @@
          hj1j = DNRM2( n, wsp(j1v),1 )
 *---     if `happy breakdown' go straightforward at the end ... 
          if ( hj1j.le.break_tol ) then
-            print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
+            if ( itrace.ne.0 )
+     .          print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
             k1 = 0
             ibrkflag = 1
             mbrkdwn = j
@@ -1862,7 +1863,8 @@
          hj1j = DNRM2( n, wsp(j1v),1 )
 *---     if `happy breakdown' go straightforward at the end ... 
          if ( hj1j.le.break_tol ) then
-            print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
+            if ( itrace.ne.0 )
+     .          print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
             k1 = 0
             ibrkflag = 1
             mbrkdwn = j
@@ -2247,7 +2249,8 @@
          wsp(ih+(j-1)*(mh+1)) = hjj
 *---     if `happy breakdown' go straightforward at the end ... 
          if ( hj1j.le.break_tol ) then
-            print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
+            if ( itrace.ne.0 )
+     .          print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
             k1 = 0
             ibrkflag = 1
             mbrkdwn = j
@@ -2646,7 +2649,8 @@
          hj1j = DZNRM2( n, wsp(j1v),1 )
 *---     if `happy breakdown' go straightforward at the end ... 
          if ( hj1j.le.break_tol ) then
-            print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
+            if ( itrace.ne.0 )
+     .          print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
             k1 = 0
             ibrkflag = 1
             mbrkdwn = j
@@ -3049,7 +3053,8 @@
          endif
 *---     if `happy breakdown' go straightforward at the end ...
          if ( hj1j.le.break_tol ) then
-            print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
+            if ( itrace.ne.0 )
+     .          print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
             k1 = 0
             ibrkflag = 1
             mbrkdwn = j
@@ -3432,7 +3437,8 @@
          hj1j = DNRM2( n, wsp(j1v),1 )
 *---     if `happy breakdown' go straightforward at the end ... 
          if ( hj1j.le.break_tol ) then
-            print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
+            if ( itrace.ne.0 )
+     .          print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
             k1 = 0
             ibrkflag = 1
             mbrkdwn = j
@@ -3794,7 +3800,8 @@
          wsp(ih+(j-1)*(mh+1)) = hjj
 *---     if `happy breakdown' go straightforward at the end ... 
          if ( hj1j.le.break_tol ) then
-            print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
+            if ( itrace.ne.0 )
+     .          print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
             k1 = 0
             ibrkflag = 1
             mbrkdwn = j
@@ -4168,7 +4175,8 @@
          hj1j = DZNRM2( n, wsp(j1v),1 )
 *---     if `happy breakdown' go straightforward at the end ... 
          if ( hj1j.le.break_tol ) then
-            print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
+            if ( itrace.ne.0 )
+     .          print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
             k1 = 0
             ibrkflag = 1
             mbrkdwn = j
@@ -4539,7 +4547,8 @@
          hj1j = DZNRM2( n, wsp(j1v),1 )
          wsp(ih+(j-1)*(mh+1)) = hjj
          if ( hj1j.le.break_tol ) then
-            print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
+            if ( itrace.ne.0 )
+     .          print*,'happy breakdown: mbrkdwn =',j,' h =',hj1j
             k1 = 0
             ibrkflag = 1
             mbrkdwn = j
