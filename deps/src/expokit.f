@@ -2404,7 +2404,7 @@
 *----------------------------------------------------------------------|
       subroutine ZGEXPV( n, m, t, v, w, tol, anorm,
      .                   wsp,lwsp,iwsp,liwsp,matvec, itrace,iflag, 
-     .                   arg, imiv )
+     .                   arg, imia )
 
       implicit none
       integer          n, m, lwsp, liwsp, itrace, iflag, iwsp(liwsp)
@@ -2412,7 +2412,7 @@
       complex*16       v(n), w(n), wsp(lwsp)
       external         matvec
       integer*8        arg
-      integer          imiv
+      integer          imia
 
 *-----Purpose----------------------------------------------------------|
 *
@@ -2472,7 +2472,7 @@
 *     
 *     arg    : (input) pointer to be put through to matvec.
 *      
-*     imiv   : (input) 1 - compute exp(-i*t*A)*v instead of 
+*     imia   : (input) 1 - compute exp(-i*t*A)*v instead of 
 *                      0 - exp(t*A)*v
 *
 *-----Accounts on the computation--------------------------------------|
@@ -2636,7 +2636,7 @@
       do 200 j = 1,m
          nmult = nmult + 1
          call matvec( wsp(j1v-n), wsp(j1v), arg )
-         if ( imiv.eq.1 )
+         if ( imia.eq.1 )
      .     call ZSCAL(n, (0.0d0,-1.0d0), wsp(j1v), 1)
          do i = 1,j
             hij = ZDOTC( n, wsp(iv+(i-1)*n),1, wsp(j1v),1 )
@@ -2660,7 +2660,7 @@
  200  continue
       nmult = nmult + 1
       call matvec( wsp(j1v-n), wsp(j1v), arg )
-      if ( imiv.eq.1 )
+      if ( imia.eq.1 )
      .  call ZSCAL(n, (0.0d0,-1.0d0), wsp(j1v), 1)
       avnorm = DZNRM2( n, wsp(j1v),1 )
 *
@@ -2803,7 +2803,7 @@
 *----------------------------------------------------------------------|
       subroutine ZHEXPV( n, m, t, v, w, tol, anorm,
      .                   wsp,lwsp,iwsp,liwsp,matvec, itrace,iflag,
-     .                   arg, imiv )
+     .                   arg, imia )
 
       implicit none
       integer          n, m, lwsp, liwsp, itrace, iflag, iwsp(liwsp)
@@ -2811,7 +2811,7 @@
       complex*16       v(n), w(n), wsp(lwsp)
       external         matvec
       integer*8        arg
-      integer          imiv
+      integer          imia
 
 *-----Purpose----------------------------------------------------------|
 *
@@ -2870,7 +2870,7 @@
 *     
 *     arg    : (input) pointer to be put through to matvec.
 *      
-*     imiv   : (input) 1 - compute exp(-i*t*A)*v instead of 
+*     imia   : (input) 1 - compute exp(-i*t*A)*v instead of 
 *                      0 - exp(t*A)*v
 *
 *-----Accounts on the computation--------------------------------------|
@@ -3035,14 +3035,14 @@
       do 200 j = 1,m
          nmult = nmult + 1
          call matvec( wsp(j1v-n), wsp(j1v), arg )
-         if ( imiv.eq.1 )
+         if ( imia.eq.1 )
      .     call ZSCAL(n, (0.0d0,-1.0d0), wsp(j1v), 1)
          if ( j.gt.1 )
      .     call ZAXPY(n,-wsp(ih+(j-1)*mh+j-2),wsp(j1v-2*n),1,wsp(j1v),1)
          hjj = ZDOTC( n, wsp(j1v-n),1, wsp(j1v),1 )
          call ZAXPY( n, -hjj, wsp(j1v-n),1, wsp(j1v),1 )
          hj1j = DZNRM2( n, wsp(j1v),1 )
-         if ( imiv.eq.1 ) then
+         if ( imia.eq.1 ) then
              wsp(ih+(j-1)*(mh+1)) = hjj
          else
              wsp(ih+(j-1)*(mh+1)) = cmplx(0.0d0, aimag(hjj))
@@ -3058,7 +3058,7 @@
             goto 300
          endif
          wsp(ih+(j-1)*mh+j) = CMPLX( hj1j )
-         if ( imiv.eq.1 ) then
+         if ( imia.eq.1 ) then
             wsp(ih+j*mh+j-1) = CMPLX( -hj1j )
          else
             wsp(ih+j*mh+j-1) = CMPLX( hj1j )
@@ -3068,7 +3068,7 @@
  200  continue
       nmult = nmult + 1
       call matvec( wsp(j1v-n), wsp(j1v), arg )
-      if ( imiv.eq.1 )
+      if ( imia.eq.1 )
      .  call ZSCAL(n, (0.0d0,-1.0d0), wsp(j1v), 1)
       avnorm = DZNRM2( n, wsp(j1v),1 )
 *

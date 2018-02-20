@@ -138,7 +138,7 @@ function _expv_cmplx!(w::Vector{Complex{Float64}},t::Real, matvec::Ptr{Void}, v:
     liwsp = max(7, m+2)
     iwsp = zeros(Int32, liwsp)
     iflag = zero(Int32) 
-    imiv = matrix_times_minus_i?1:0
+    imia = matrix_times_minus_i?1:0
     if hermitian
         ccall(Libdl.dlsym(libexpokit, :zhexpv_wrap), Void, 
         (Ptr{Int32},   Ptr{Int32},            Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Float64},
@@ -146,7 +146,7 @@ function _expv_cmplx!(w::Vector{Complex{Float64}},t::Real, matvec::Ptr{Void}, v:
          Ptr{Int32},   Ptr{Int32},            Ptr{Void},    Ptr{Int32}), 
          &n,           &m,                    &t,           v,                     w,                     &tol, 
          &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec,
-         &trace,       &iflag,                arg,          &imiv)
+         &trace,       &iflag,                arg,          &imia)
     else
         ccall(Libdl.dlsym(libexpokit, :zgexpv_wrap), Void, 
         (Ptr{Int32},   Ptr{Int32},            Ptr{Float64}, Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Float64},
@@ -154,7 +154,7 @@ function _expv_cmplx!(w::Vector{Complex{Float64}},t::Real, matvec::Ptr{Void}, v:
          Ptr{Int32},   Ptr{Int32},            Ptr{Void},    Ptr{Int32}), 
          &n,           &m,                    &t,           v,                     w,                     &tol, 
          &anorm,       wsp,                   &lwsp,        iwsp,                  &lwsp,                 matvec,
-         &trace,       &iflag,                arg,          &imiv )
+         &trace,       &iflag,                arg,          &imia )
     end
     if trace
         Libc.flush_cstdio()
