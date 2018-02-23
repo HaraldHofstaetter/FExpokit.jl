@@ -5,7 +5,6 @@ module FExpokit
 export expv, phiv, expv!, phiv!
 export get_lwsp_liwsp_expv, get_lwsp_liwsp_phiv
 
-
 function __init__()
     global const libexpokit = Libdl.dlopen(joinpath(dirname(@__FILE__),
                             "..", "deps", "lib", string("libexpokit.", Libdl.dlext)))
@@ -360,32 +359,35 @@ end
 #end   
 
 
-function funvec{T<:Union{Float64,Complex{Float64}}}(v_::Ptr{T}, w_::Ptr{T}, nF_::Ptr{Tuple{Int,Function}})
-    nF = unsafe_pointer_to_objref(nF_)::Tuple{Int,Function}
+function funvec(v_::Ptr{Complex{Float64}}, w_::Ptr{Complex{Float64}}, nF_::Ptr{Tuple{Int,Function,Tuple}})
+    nF = unsafe_pointer_to_objref(nF_)::Tuple{Int,Function, Tuple}
     n = nF[1]
-    F = nF[2]
+    F! = nF[2]
+    args = nF[3]
     v = unsafe_wrap(Array, v_, n)
     w = unsafe_wrap(Array, w_, n)
-    w[:] = F(v)
+    F!(w, v, args...)
     return nothing
 end 
 
-function expv(t::Real, F::Function, v::Vector{Float64}, anorm::Real;
-    tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false)
-    w = zeros(Float64, length(v))
-    nF = (length(v), F) 
-    cfunvec = cfunction(funvec, Void, (Ptr{Float64}, Ptr{Float64}, Ptr{Tuple{Int,Function}}))
-    arg = pointer_from_objref(nF)
-    _expv_real!(w, t, cfunvec, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
-end
+#function expv!(w::Vector{Float64},t::Real, F::Function, v::Vector{Float64}, anorm::Real; 
+#               args::Tuple=(), tol::Real=0.0, m::Integer=30, symmetric::Bool=false, trace::Bool=false, statistics::Bool=false)
+#    w = zeros(Float64, length(v))
+#    nF = (length(v), F, args) 
+#    cfunvec = cfunction(funvec, Void, (Ptr{Float64}, Ptr{Float64}, Ptr{Tuple{Int,Function}}))
+#    arg = pointer_from_objref(nF)
+#    _expv_real!(w, t, cfunvec, v, anorm, tol=tol, m=m, symmetric=symmetric, trace=trace, statistics=statistics, arg=arg)
+#end
 
-function expv(t::Real, F::Function, v::Vector{Complex{Float64}}, anorm::Real;
-    tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, statistics::Bool=false)
-    w = zeros(Complex{Float64}, length(v))
-    nF = (length(v), F) 
-    cfunvec = cfunction(funvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Tuple{Int,Function}}))
+function expv!(w::Vector{Complex{Float64}},t::Real, F::Function, v::Vector{Complex{Float64}}, anorm::Real;
+               args::Tuple=(), tol::Real=0.0, m::Integer=30, hermitian::Bool=false, trace::Bool=false, 
+               statistics::Bool=false, matrix_times_minus_i::Bool=false,
+               wsp::Array{Complex{Float64},1}=Complex{Float64}[], iwsp::Array{Int32,1}=Int32[])
+    nF = (length(v), F, args) 
+    cfunvec = cfunction(funvec, Void, (Ptr{Complex{Float64}}, Ptr{Complex{Float64}}, Ptr{Tuple{Int,Function, Tuple}}))
     arg = pointer_from_objref(nF)
-    _expv_cmplx!(w, t, cfunvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg)
+    _expv_cmplx!(w, t, cfunvec, v, anorm, tol=tol, m=m, hermitian=hermitian, trace=trace, statistics=statistics, arg=arg,
+                matrix_times_minus_i=matrix_times_minus_i, wsp=wsp, iwsp=iwsp)
 end
 
 
